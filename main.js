@@ -1,49 +1,70 @@
 var btn = document.querySelector(".btn");
-var progress = document.querySelector("#progress");
-// console.log(movers);
+var input = document.getElementById("textVal");
+var sections = document.querySelectorAll(".tasksSection");
 
+var selected = null;
 var counter = 1;
-var selected;
 
-
+window.onload = function () {
+  if (localStorage.getItem("tasks")) {
+    let tasks = JSON.parse(localStorage.getItem("tasks"));
+    tasks.forEach((task) => {
+      createTask(task.text, task.section, task.id);
+    });
+    counter = tasks.length + 1;
+  }
+};
 
 btn.addEventListener("click", function () {
-  var project = document.querySelector("#textVal");
-  var newli = document.createElement("li");
-  newli.innerHTML = project.value;
-  newli.classList = "movers";
-  newli.id = counter;
-  counter++;
-  newli.draggable = "true";
+  let text = input.value;
+  if (text !== "") {
+    createTask(text, "progress", counter);
+    saveToLocalStorage();
+    counter++;
+    input.value = "";
+  }
+});
 
+function createTask(text, sectionType, id) {
+  let li = document.createElement("li");
+  li.textContent = text;
+  li.className = "movers";
+  li.id = "task-" + id;
+  li.draggable = true;
 
-  progress.appendChild(newli);
-  //   console.log(newli);
-
-  ///////////////////////////
-
-  newli.addEventListener("dragstart", function (e) {
-    selected = e.target;
-    console.log(selected);
-
-    var tasksSection = document.querySelectorAll(".tasksSection");
-    for (let i = 0; i < tasksSection.length; i++) {
-
-      tasksSection[i].addEventListener("dragover", function (e) {
-        e.preventDefault();
-      });
-
-      tasksSection[i].addEventListener("drop", function (e) {
-        e.target.appendChild(selected);
-      });
-      
-
-
-    }
+  li.addEventListener("dragstart", function () {
+    selected = this;
   });
 
-  //remove input data
-  document.getElementById("textVal").value = "";
+  let section = document.getElementById(sectionType);
+  section.appendChild(li);
+}
 
-  
+sections.forEach((section) => {
+  section.addEventListener("dragover", function (e) {
+    e.preventDefault();
+  });
+
+  section.addEventListener("drop", function () {
+    if (selected) {
+      this.appendChild(selected);
+      saveToLocalStorage();
+    }
+  });
 });
+
+function saveToLocalStorage() {
+  let allTasks = [];
+  sections.forEach((section) => {
+    let type = section.id;
+    let items = section.querySelectorAll("li");
+    items.forEach((li) => {
+      allTasks.push({
+        id: li.id,
+        text: li.textContent,
+        section: type
+      });
+    });
+  });
+  localStorage.setItem("tasks", JSON.stringify(allTasks));
+}
